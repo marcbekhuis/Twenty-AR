@@ -47,6 +47,7 @@ public class CubeSpawner : MonoBehaviour
     public void SpawnCube(int x)
     {
         GameObject spawnedCube = Instantiate(gameData.cube, new Vector3(x - Mathf.RoundToInt(gameData.mapWidth / 2f) + x * gameData.cubeSpacing.x, 0,0), new Quaternion(0,0,0,0), gameData.cubesParent);
+        spawnedCube.transform.localPosition = new Vector3(x - Mathf.RoundToInt(gameData.mapWidth / 2f) + x * gameData.cubeSpacing.x, 0, 0);
         gameData.cubes.Add(new Vector2Int(x,0), new CubeData(Random.Range(1,gameData.score + 1), spawnedCube, new List<CubeData>()));
     }
 
@@ -66,7 +67,7 @@ public class CubeSpawner : MonoBehaviour
                     else
                     {
                         CubeData cube = gameData.cubes[new Vector2Int(x, y)];
-                        cube.gameObject.transform.localPosition = new Vector3(cube.gameObject.transform.localPosition.x, cube.gameObject.transform.localPosition.y + 1 + gameData.cubeSpacing.y, 0);
+                        cube.gameObject.transform.localPosition = new Vector3(x - Mathf.RoundToInt(gameData.mapWidth / 2f) + x * gameData.cubeSpacing.x, y + 1 + (y + 1) * gameData.cubeSpacing.y, 0);
                         gameData.cubes.Add(new Vector2Int(x, y + 1), cube);
                         gameData.cubes.Remove(new Vector2Int(x, y));
                     }
