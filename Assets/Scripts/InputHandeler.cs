@@ -5,7 +5,6 @@ using UnityEngine;
 public class InputHandeler : MonoBehaviour
 {
     CubeData movingCube;
-    Vector2Int movingCubeGridPosition;
     [SerializeField] Camera camera;
 
     // Update is called once per frame
@@ -13,28 +12,38 @@ public class InputHandeler : MonoBehaviour
     {
         if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
         {
-            if (Input.GetKeyDown(KeyCode.Mouse0) && movingCube == null)
+            if (Input.GetKeyDown(KeyCode.Mouse0))
             {
-                Vector2 position = GetPosition(Input.mousePosition);
-                Vector2Int gridPosition = new Vector2Int(Mathf.RoundToInt(position.x + GameData.instance.mapWidth / 2f), Mathf.RoundToInt(position.y));
-                if (GameData.instance.cubes.ContainsKey(gridPosition))
+                if (movingCube == null)
                 {
-                    movingCube = GameData.instance.cubes[gridPosition];
-                    movingCubeGridPosition = gridPosition;
-                    movingCube.rigidbody.isKinematic = false;
+                    Vector2 position = GetPosition(Input.mousePosition);
+                    Vector2Int gridPosition = new Vector2Int(Mathf.RoundToInt(position.x / GameData.instance.cubesParent.transform.localScale.x * 1 + GameData.instance.mapWidth / 2f), Mathf.RoundToInt(position.y / GameData.instance.cubesParent.transform.localScale.y));
+                    if (GameData.instance.cubes.ContainsKey(gridPosition))
+                    {
+                        movingCube = GameData.instance.cubes[gridPosition];
+                        movingCube.rigidbody.isKinematic = false;
+                        movingCube.moving = true;
+                        MoveCube(position);
+                    }
+                }
+            }
+            else if (Input.GetKey(KeyCode.Mouse0))
+            {
+                if (movingCube != null)
+                {
+                    Vector2 position = GetPosition(Input.mousePosition);
                     MoveCube(position);
                 }
             }
-            else if (Input.GetKeyUp(KeyCode.Mouse0) && movingCube != null)
+            else if (Input.GetKeyUp(KeyCode.Mouse0))
             {
-                movingCube.gameObject.transform.localPosition = new Vector2(movingCubeGridPosition.x - Mathf.RoundToInt(GameData.instance.mapWidth / 2f) + movingCubeGridPosition.x * GameData.instance.cubeSpacing.x, movingCubeGridPosition.y + movingCubeGridPosition.y * GameData.instance.cubeSpacing.y);
-                movingCube.rigidbody.isKinematic = true;
-                movingCube = null;
-            }
-            if (Input.GetKey(KeyCode.Mouse0) && movingCube != null)
-            {
-                Vector2 position = GetPosition(Input.mousePosition);
-                MoveCube(position);
+                if (movingCube != null)
+                {
+                    movingCube.MoveCube(movingCube.gridPosition.x, movingCube.gridPosition.y);
+                    movingCube.rigidbody.isKinematic = true;
+                    movingCube.moving = false;
+                    movingCube = null;
+                }
             }
         }
         else
@@ -43,26 +52,36 @@ public class InputHandeler : MonoBehaviour
             {
                 if (touch.phase == TouchPhase.Began)
                 {
-                    Vector2 position = GetPosition(touch.position);
-                    Vector2Int gridPosition = new Vector2Int(Mathf.RoundToInt(position.x + GameData.instance.mapWidth / 2f), Mathf.RoundToInt(position.y));
-                    if (GameData.instance.cubes.ContainsKey(gridPosition))
+                    if (movingCube == null)
                     {
-                        movingCube = GameData.instance.cubes[gridPosition];
-                        movingCubeGridPosition = gridPosition;
-                        movingCube.rigidbody.isKinematic = false;
-                        MoveCube(position);
+                        Vector2 position = GetPosition(touch.position);
+                        Vector2Int gridPosition = new Vector2Int(Mathf.RoundToInt(position.x / GameData.instance.cubesParent.transform.localScale.x * 1 + GameData.instance.mapWidth / 2f), Mathf.RoundToInt(position.y / GameData.instance.cubesParent.transform.localScale.y));
+                        if (GameData.instance.cubes.ContainsKey(gridPosition))
+                        {
+                            movingCube = GameData.instance.cubes[gridPosition];
+                            movingCube.rigidbody.isKinematic = false;
+                            movingCube.moving = true;
+                            MoveCube(position);
+                        }
                     }
                 }
                 else if (touch.phase == TouchPhase.Moved)
                 {
-                    movingCube.gameObject.transform.localPosition = new Vector2(movingCubeGridPosition.x - Mathf.RoundToInt(GameData.instance.mapWidth / 2f) + movingCubeGridPosition.x * GameData.instance.cubeSpacing.x, movingCubeGridPosition.y + movingCubeGridPosition.y * GameData.instance.cubeSpacing.y);
-                    movingCube.rigidbody.isKinematic = true;
-                    movingCube = null;
+                    if (movingCube != null)
+                    {
+                        Vector2 position = GetPosition(touch.position);
+                        MoveCube(position);
+                    }
                 }
-                if (touch.phase == TouchPhase.Moved)
+                else if (touch.phase == TouchPhase.Ended)
                 {
-                    Vector2 position = GetPosition(touch.position);
-                    MoveCube(position);
+                    if (movingCube != null)
+                    {
+                        movingCube.MoveCube(movingCube.gridPosition.x, movingCube.gridPosition.y);
+                        movingCube.rigidbody.isKinematic = true;
+                        movingCube.moving = false;
+                        movingCube = null;
+                    }
                 }
                 break;
             }
@@ -71,26 +90,36 @@ public class InputHandeler : MonoBehaviour
 
     public void MoveCube(Vector2 position)
     {
+        if (movingCube == null)
+            return;
+        if (!movingCube.rigidbody)
+            return;
         movingCube.rigidbody.MovePosition(position);
-        Vector2Int gridPosition = new Vector2Int(Mathf.RoundToInt(position.x + GameData.instance.mapWidth / 2f), Mathf.RoundToInt(position.y));
+        Vector2Int gridPosition = new Vector2Int(Mathf.RoundToInt(position.x / GameData.instance.cubesParent.transform.localScale.x * 1 + GameData.instance.mapWidth / 2f), Mathf.RoundToInt(position.y / GameData.instance.cubesParent.transform.localScale.y));
         if (GameData.instance.cubes.ContainsKey(gridPosition))
         {
-            if (gridPosition != movingCubeGridPosition)
+            if (gridPosition != movingCube.gridPosition)
             {
-                if (movingCube.number == GameData.instance.cubes[gridPosition].number)
+                if (Vector2.Distance(gridPosition, movingCube.gridPosition) <= 1)
                 {
-                    GameData.instance.cubes[gridPosition].IncreaseNumber();
-                    Destroy(movingCube.gameObject);
-                    GameData.instance.cubes.Remove(movingCubeGridPosition);
-                    movingCube = null;
+                    if (movingCube.number == GameData.instance.cubes[gridPosition].number)
+                    {
+                        GameData.instance.cubes[gridPosition].IncreaseNumber();
+                        Destroy(movingCube.gameObject);
+                        GameData.instance.cubes.Remove(movingCube.gridPosition);
+                        movingCube = null;
+                    }
                 }
             }
         }
         else if(gridPosition.x < GameData.instance.mapWidth && gridPosition.x >= 0 && gridPosition.y >= 0)
         {
-            GameData.instance.cubes.Add(gridPosition, movingCube);
-            GameData.instance.cubes.Remove(movingCubeGridPosition);
-            movingCubeGridPosition = gridPosition;
+            if (Vector2.Distance(gridPosition, movingCube.gridPosition) <= 1)
+            {
+                Debug.LogError("Moving Cube around");
+                GameData.instance.cubes.Add(gridPosition, movingCube);
+                GameData.instance.cubes.Remove(movingCube.gridPosition);
+            }
         }
         Gravity.instance.ApplyGravity();
     }
@@ -99,6 +128,7 @@ public class InputHandeler : MonoBehaviour
     {
         Ray ray = camera.ScreenPointToRay(position);
         RaycastHit hit;
+        Debug.DrawRay(ray.origin, ray.direction * 100);
         Physics.Raycast(ray, out hit);
         if (hit.transform)
         {

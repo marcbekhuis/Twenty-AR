@@ -43,27 +43,31 @@ public class Gravity : MonoBehaviour
 
     private bool ApplyGravityToCube(Vector2Int gridPosition, GameData gameData)
     {
-        if (gameData.cubes.ContainsKey(gridPosition - new Vector2Int(0,1)))
+        if (!gameData.cubes[gridPosition].moving)
         {
-            CubeData cube = gameData.cubes[gridPosition];
-            CubeData cubeLower = gameData.cubes[gridPosition - new Vector2Int(0, 1)];
-            if (cube.number == cubeLower.number)
+            if (gameData.cubes.ContainsKey(gridPosition - new Vector2Int(0, 1)))
             {
-                Destroy(cube.gameObject);
-                gameData.cubes.Remove(gridPosition);
-                cubeLower.IncreaseNumber();
+                CubeData cube = gameData.cubes[gridPosition];
+                CubeData cubeLower = gameData.cubes[gridPosition - new Vector2Int(0, 1)];
+                if (cube.number == cubeLower.number)
+                {
+                    Destroy(cube.gameObject);
+                    gameData.cubes.Remove(gridPosition);
+                    cubeLower.IncreaseNumber();
+                }
             }
+            else
+            {
+                CubeData cube = gameData.cubes[gridPosition];
+                cube.MoveCube(gridPosition.x, gridPosition.y - 1);
+                gameData.cubes.Add(gridPosition - new Vector2Int(0, 1), cube);
+                gameData.cubes.Remove(gridPosition);
+            }
+            if (!gameData.cubes.ContainsKey(gridPosition - new Vector2Int(0, 2)) && gridPosition.y - 2 >= 0)
+                return true;
+            else
+                return false;
         }
-        else
-        {
-            CubeData cube = gameData.cubes[gridPosition];
-            cube.gameObject.transform.localPosition = new Vector3(gridPosition.x - Mathf.RoundToInt(gameData.mapWidth / 2f) + gridPosition.x * gameData.cubeSpacing.x, gridPosition.y - 1 + (gridPosition.y - 1) * gameData.cubeSpacing.y, 0);
-            gameData.cubes.Add(gridPosition - new Vector2Int(0, 1), cube);
-            gameData.cubes.Remove(gridPosition);
-        }
-        if (!gameData.cubes.ContainsKey(gridPosition - new Vector2Int(0, 2)) && gridPosition.y - 2 > 3)
-            return true;
-        else
-            return false;
+        return false;
     }
 }
